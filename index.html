@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spell Tracker - Titan</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Simple icon components to replace Lucide
+        const Settings = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        );
+
+        const Download = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+        );
+
+        const SpellTracker = () => {
+          const [phaseTransitions, setPhaseTransitions] = useState({ phase2: 5, phase3: 11 });
+          const [selectedSide, setSelectedSide] = useState('Gauche');
+          const [showSettings, setShowSettings] = useState(false);
+          const [spellData, setSpellData] = useState([]);
+
+          const calculateSpells = () => {
+            const turns = [];
+            const { phase2, phase3 } = phaseTransitions;
+            
+            // Initialize spell availability trackers
+            let bleuNextAvailable = 1;
+            let sceauNextAvailable = 1;
+            let rafaleNextAvailable = 2;
+            let laserNextAvailable = 2;
+            let patouneNextAvailable = 2;
+            let rafaleAlternate = 'Gauche';
+            let patouneAlternate = 'Droite';
+            let blackoutTurns = [];
+            
+            // Calculate blackout turns
+            if (phase2 > 1) {
+              blackoutTurns.push(phase2, phase2 + 1);
+            }
+            if (phase3 > 1) {
+              blackoutTurns.push(phase3, phase3 + 1);
+            }
+            
+            for (let turn = 1; turn <= 100; turn++) {
+              let currentPhase = turn < phase2 ? 'P1' : turn < phase3 ? 'P2' : 'P3';
+              let spells = [];
+              let isBlackout = blackoutTurns.includes(turn);
+              
+              if (isBlackout) {
+                turns.push({ turn, phase: currentPhase, spells: ['BLACKOUT'], isBlackout: true });
+                continue;
+              }
+              
+              let getCurrentCooldown = (spell, phase) => {
+                if (spell === 'bleu') {
+                  return phase === 'P1' ? 4 : phase === 'P2' ? 3 : 2;
+                } else if (spell === 'sceau') {
+                  return phase === 'P1' ? 3 : phase === 'P2' ? 2 : 1;
+                }
+                return 0;
+              };
+              
+              if (!window.spellLastCast) {
+                window.spellLastCast = { bleu: 0, sceau: 0 };
+              }
+              
+              if (turn === 1) {
+                window.spellLastCast = { bleu: 0, sceau: 0 };
+              }
+              
+              // Bleu spell
+              if (window.spellLastCast.bleu === 0 || turn - window.spellLastCast.bleu >= getCurrentCooldown('bleu', currentPhase)) {
+                spells.push('Bleu');
+                window.spellLastCast.bleu = turn;
+              }
+              
+              // Sceau spell
+              if (window.spellLastCast.sceau === 0 || turn - window.spellLastCast.sceau >= getCurrentCooldown('sceau', currentPhase)) {
+                spells.push('Sceau');
+                window.spellLastCast.sceau = turn;
+              }
+              
+              // Rafale spell
+              if (turn >= rafaleNextAvailable) {
+                spells.push(`Rafale ${rafaleAlternate}`);
+                rafaleAlternate = rafaleAlternate === 'Gauche' ? 'Droite' : 'Gauche';
+                rafaleNextAvailable = turn + 2;
+              }
+              
+              // Patoune spell
+              let isAfterBlackout = blackoutTurns.includes(turn - 1);
+              if (turn >= patouneNextAvailable && !isAfterBlackout && currentPhase !== 'P3') {
+                if (currentPhase === 'P2') {
+                  spells.push('Patoune All');
+                } else {
+                  spells.push(`Patoune ${patouneAlternate}`);
+                  patouneAlternate = patouneAlternate === 'Droite' ? 'Gauche' : 'Droite';
+                }
+                patouneNextAvailable = turn + 2;
+              }
+              
+              // Laser spell
+              if (turn >= laserNextAvailable) {
+                spells.push('Laser');
+                laserNextAvailable = turn + 2;
+              }
+              
+              // Poussée spell
+              if (currentPhase === 'P3') {
+                let p3Start = phase3 + 2;
+                if (turn >= p3Start + 1 && (turn - p3Start - 1) % 3 === 0) {
+                  spells.push('Poussée');
+                }
+              }
+              
+              // Attirance spell
+              if (currentPhase === 'P3') {
+                let p3Start = phase3 + 2;
+                if (turn >= p3Start + 2 && (turn - p3Start - 2) % 3 === 0) {
+                  spells.push('Attirance');
+                }
+              }
+              
+              turns.push({ 
+                turn, 
+                phase: currentPhase, 
+                spells: spells.length ? spells : ['—'], 
+                isBlackout: false 
+              });
+            }
+            
+            return turns;
+          };
+
+          useEffect(() => {
+            setSpellData(calculateSpells());
+          }, [phaseTransitions]);
+
+          const getSpellHighlight = (spell) => {
+            if (spell === 'BLACKOUT') return 'bg-gray-800 text-white';
+            if (spell === 'Bleu') return 'bg-blue-200 text-blue-900 font-semibold';
+            if (spell === 'Attirance') return 'bg-purple-200 text-purple-900 font-semibold';
+            if (spell === 'Poussée') return 'bg-green-200 text-green-900 font-semibold';
+            if (spell.includes('Rafale') && spell.includes(selectedSide)) return 'bg-yellow-200 text-yellow-900 font-semibold';
+            return '';
+          };
+
+          const exportData = () => {
+            const csvContent = "Turn,Phase,Spells\n" + 
+              spellData.map(row => `${row.turn},${row.phase},"${row.spells.join(', ')}"`).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'spell_tracker.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+          };
+
+          return (
+            <div className="max-w-7xl mx-auto p-6 bg-white min-h-screen">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">Spell Casting Tracker</h1>
+                <p className="text-gray-600">Track spell casting patterns across 100 turns and 3 phases</p>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <div className="flex flex-wrap gap-4 items-center justify-between">
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setShowSettings(!showSettings)}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      {showSettings ? 'Hide Settings' : 'Show Settings'}
+                    </button>
+                    <button
+                      onClick={exportData}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export CSV
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Highlight Side:</span>
+                    <button
+                      onClick={() => setSelectedSide('Gauche')}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        selectedSide === 'Gauche' 
+                          ? 'bg-yellow-200 text-yellow-900' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Gauche
+                    </button>
+                    <button
+                      onClick={() => setSelectedSide('Droite')}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        selectedSide === 'Droite' 
+                          ? 'bg-yellow-200 text-yellow-900' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Droite
+                    </button>
+                  </div>
+                </div>
+
+                {showSettings && (
+                  <div className="mt-4 p-4 bg-white rounded-lg border">
+                    <h3 className="font-semibold mb-3">Phase Transition Settings</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phase 2 starts on turn:
+                        </label>
+                        <input
+                          type="number"
+                          min="2"
+                          max="98"
+                          value={phaseTransitions.phase2}
+                          onChange={(e) => setPhaseTransitions(prev => ({ 
+                            ...prev, 
+                            phase2: parseInt(e.target.value) || 30 
+                          }))}
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phase 3 starts on turn:
+                        </label>
+                        <input
+                          type="number"
+                          min="2"
+                          max="99"
+                          value={phaseTransitions.phase3}
+                          onChange={(e) => setPhaseTransitions(prev => ({ 
+                            ...prev, 
+                            phase3: parseInt(e.target.value) || 60 
+                          }))}
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white border rounded-lg shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Turn
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Phase
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Spells Cast
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {spellData.map((row, index) => (
+                        <tr key={index} className={row.isBlackout ? 'bg-gray-100' : 'hover:bg-gray-50'}>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {row.turn}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              row.phase === 'P1' ? 'bg-red-100 text-red-800' :
+                              row.phase === 'P2' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {row.phase}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            <div className="flex flex-wrap gap-1">
+                              {row.spells.map((spell, spellIndex) => (
+                                <span
+                                  key={spellIndex}
+                                  className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                                    getSpellHighlight(spell) || 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {spell}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Legend</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-200 rounded"></div>
+                    <span>Bleu (Highlighted)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-purple-200 rounded"></div>
+                    <span>Attirance (Highlighted)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-200 rounded"></div>
+                    <span>Poussée (Highlighted)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-yellow-200 rounded"></div>
+                    <span>Selected Rafale Side</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<SpellTracker />, document.getElementById('root'));
+    </script>
+</body>
+</html>
