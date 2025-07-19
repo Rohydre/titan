@@ -40,6 +40,8 @@
 
         const SpellTracker = () => {
           const [phaseTransitions, setPhaseTransitions] = useState({ phase2: 5, phase3: 11 });
+          const [phase2OneRoundBlackout, setPhase2OneRoundBlackout] = useState(false);
+  	      const [phase3OneRoundBlackout, setPhase3OneRoundBlackout] = useState(false);
           const [selectedSide, setSelectedSide] = useState('Gauche');
           const [showSettings, setShowSettings] = useState(false);
           const [spellData, setSpellData] = useState([]);
@@ -60,11 +62,19 @@
             
             // Calculate blackout turns
             if (phase2 > 1) {
-              blackoutTurns.push(phase2, phase2 + 1);
-            }
-            if (phase3 > 1) {
-              blackoutTurns.push(phase3, phase3 + 1);
-            }
+      		if (phase2OneRoundBlackout) {
+        		blackoutTurns.push(phase2);
+      		} else {
+        		blackoutTurns.push(phase2, phase2 + 1);
+      	    		}
+    	    }
+    	    if (phase3 > 1) {
+      		if (phase3OneRoundBlackout) {
+        	    blackoutTurns.push(phase3);
+      		} else {
+        	        blackoutTurns.push(phase3, phase3 + 1);
+      			}
+    		}
             
             for (let turn = 1; turn <= 100; turn++) {
               let currentPhase = turn < phase2 ? 'P1' : turn < phase3 ? 'P2' : 'P3';
@@ -130,21 +140,23 @@
                 laserNextAvailable = turn + 2;
               }
               
-              // Poussée spell
-              if (currentPhase === 'P3') {
-                let p3Start = phase3 + 2;
-                if (turn >= p3Start + 1 && (turn - p3Start - 1) % 3 === 0) {
-                  spells.push('Poussée');
-                }
-              }
-              
-              // Attirance spell
-              if (currentPhase === 'P3') {
-                let p3Start = phase3 + 2;
-                if (turn >= p3Start + 2 && (turn - p3Start - 2) % 3 === 0) {
-                  spells.push('Attirance');
-                }
-              }
+              // Poussée spell - only P3, every 3 turns starting second turn after blackout
+      if (currentPhase === 'P3') {
+        let p3BlackoutDuration = phase3OneRoundBlackout ? 1 : 2;
+        let p3Start = phase3 + p3BlackoutDuration;
+        if (turn >= p3Start + 1 && (turn - p3Start - 1) % 3 === 0) {
+          spells.push('Poussée');
+        }
+      }
+      
+      // Attirance spell - only P3, every 3 turns starting third turn after blackout
+      if (currentPhase === 'P3') {
+        let p3BlackoutDuration = phase3OneRoundBlackout ? 1 : 2;
+        let p3Start = phase3 + p3BlackoutDuration;
+        if (turn >= p3Start + 2 && (turn - p3Start - 2) % 3 === 0) {
+          spells.push('Attirance');
+        }
+      }
               
               turns.push({ 
                 turn, 
@@ -158,8 +170,8 @@
           };
 
           useEffect(() => {
-            setSpellData(calculateSpells());
-          }, [phaseTransitions]);
+    setSpellData(calculateSpells());
+  }, [phaseTransitions, phase2OneRoundBlackout, phase3OneRoundBlackout]);
 
           const getSpellHighlight = (spell) => {
             if (spell === 'BLACKOUT') return 'bg-gray-800 text-white';
@@ -235,45 +247,79 @@
                 </div>
 
                 {showSettings && (
-                  <div className="mt-4 p-4 bg-white rounded-lg border">
-                    <h3 className="font-semibold mb-3">Phase Transition Settings</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Phase 2 starts on turn:
-                        </label>
-                        <input
-                          type="number"
-                          min="2"
-                          max="98"
-                          value={phaseTransitions.phase2}
-                          onChange={(e) => setPhaseTransitions(prev => ({ 
-                            ...prev, 
-                            phase2: parseInt(e.target.value) || 30 
-                          }))}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Phase 3 starts on turn:
-                        </label>
-                        <input
-                          type="number"
-                          min="2"
-                          max="99"
-                          value={phaseTransitions.phase3}
-                          onChange={(e) => setPhaseTransitions(prev => ({ 
-                            ...prev, 
-                            phase3: parseInt(e.target.value) || 60 
-                          }))}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+          <div className="mt-4 p-4 bg-white rounded-lg border">
+            <h3 className="font-semibold mb-3">Phase Transition Settings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Phase 2 Settings */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-800">Phase 2</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phase 2 starts on turn:
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="98"
+                    value={phaseTransitions.phase2}
+                    onChange={(e) => setPhaseTransitions(prev => ({ 
+                      ...prev, 
+                      phase2: parseInt(e.target.value) || 30 
+                    }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="phase2-one-turn"
+                    checked={phase2OneRoundBlackout}
+                    onChange={(e) => setPhase2OneRoundBlackout(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="phase2-one-turn" className="text-sm text-gray-700">
+                    1 turn blackout only
+                  </label>
+                </div>
               </div>
+              
+              {/* Phase 3 Settings */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-800">Phase 3</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phase 3 starts on turn:
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="99"
+                    value={phaseTransitions.phase3}
+                    onChange={(e) => setPhaseTransitions(prev => ({ 
+                      ...prev, 
+                      phase3: parseInt(e.target.value) || 60 
+                    }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="phase3-one-turn"
+                    checked={phase3OneRoundBlackout}
+                    onChange={(e) => setPhase3OneRoundBlackout(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="phase3-one-turn" className="text-sm text-gray-700">
+                    1 turn blackout only
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
 
               <div className="bg-white border rounded-lg shadow-sm">
                 <div className="overflow-x-auto">
