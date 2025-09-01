@@ -16,6 +16,7 @@
                 sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            background-color: white;
         }
     </style>
 </head>
@@ -38,12 +39,21 @@
             </svg>
         );
 
+        const DarkModeIcon = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M22 15.8442C20.6866 16.4382 19.2286 16.7688 17.6935 16.7688C11.9153 16.7688 7.23116 12.0847 7.23116 6.30654C7.23116 4.77135 7.5618 3.3134 8.15577 2C4.52576 3.64163 2 7.2947 2 11.5377C2 17.3159 6.68414 22 12.4623 22C16.7053 22 20.3584 19.4742 22 15.8442Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        );
+
+
+
         const SpellTracker = () => {
           const [phaseTransitions, setPhaseTransitions] = useState({ phase2: 5, phase3: 11 });
           const [phase2OneRoundBlackout, setPhase2OneRoundBlackout] = useState(false);
   	      const [phase3OneRoundBlackout, setPhase3OneRoundBlackout] = useState(false);
           const [selectedSide, setSelectedSide] = useState('Gauche');
           const [showSettings, setShowSettings] = useState(false);
+          const [darkMode, setDarkMode] = useState(false);
           const [spellData, setSpellData] = useState([]);
 
           const calculateSpells = () => {
@@ -62,24 +72,25 @@
             
             // Calculate blackout turns
             if (phase2 > 1) {
-      		if (phase2OneRoundBlackout) {
-        		blackoutTurns.push(phase2);
-      		} else {
-        		blackoutTurns.push(phase2, phase2 + 1);
-      	    		}
-    	    }
-    	    if (phase3 > 1) {
-      		if (phase3OneRoundBlackout) {
-        	    blackoutTurns.push(phase3);
-      		} else {
-        	        blackoutTurns.push(phase3, phase3 + 1);
-      			}
+              if (phase2OneRoundBlackout) {
+                blackoutTurns.push(phase2);
+              } else {
+                blackoutTurns.push(phase2, phase2 + 1);
+              }
+            }
+
+            if (phase3 > 1) {
+              if (phase3OneRoundBlackout) {
+                  blackoutTurns.push(phase3);
+              } else {
+                  blackoutTurns.push(phase3, phase3 + 1);
+            }
     		}
             
             for (let turn = 1; turn <= 100; turn++) {
-              let currentPhase = turn < phase2 ? 'P1' : turn < phase3 ? 'P2' : 'P3';
+              let currentPhase = (!phase2 || (turn < phase2)) ? 'P1' : (!phase3 || (turn < phase3)) ? 'P2' : 'P3';
               let spells = [];
-              let isBlackout = blackoutTurns.includes(turn);
+              let isBlackout = blackoutTurns.includes(turn) && currentPhase !== 'P1';
               
               if (isBlackout) {
                 turns.push({ turn, phase: currentPhase, spells: ['BLACKOUT'], isBlackout: true });
@@ -175,10 +186,10 @@
 
           const getSpellHighlight = (spell) => {
             if (spell === 'BLACKOUT') return 'bg-gray-800 text-white';
-            if (spell === 'Bleu') return 'bg-blue-200 text-blue-900 font-semibold';
-            if (spell === 'Attirance') return 'bg-purple-200 text-purple-900 font-semibold';
-            if (spell === 'Poussée') return 'bg-green-200 text-green-900 font-semibold';
-            if (spell.includes('Rafale') && spell.includes(selectedSide)) return 'bg-yellow-200 text-yellow-900 font-semibold';
+            if (spell === 'Bleu') return  `${darkMode ? "bg-yellow-200 text-yellow-900" : "bg-blue-200 text-blue-900" }  font-semibold`;
+            if (spell === 'Attirance') return `${darkMode ? "bg-green-200 text-green-900" : "bg-purple-200 text-purple-900" }  font-semibold`;
+            if (spell === 'Poussée') return `${darkMode ? "bg-purple-200 text-purple-900" : "bg-green-200 text-green-900" }  font-semibold`;
+            if (spell.includes('Rafale') && spell.includes(selectedSide)) return `${darkMode ? "bg-blue-200 text-blue-900" : "bg-yellow-200 text-yellow-900" } font-semibold`;
             return '';
           };
 
@@ -199,17 +210,21 @@
             <div className="max-w-7xl mx-auto p-6 bg-white min-h-screen">
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">TITAN - SHANOL:
-		<a 
-    href="https://youtu.be/G0xzrw4jTUQ" 
-    target="_blank" 
-    rel="noopener noreferrer"
-    className="text-red-600 hover:text-red-700 underline decoration-2 underline-offset-2 transition duration-200 ml-2"
-  >
-    YouTube
-  </a>
+                    <a 
+                    href="https://youtu.be/G0xzrw4jTUQ" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`${darkMode ? "text-cyan-400 hover:text-cyan-500" : "text-red-600 hover:text-red-700"} underline decoration-2 underline-offset-2 transition duration-200 ml-2`}
+                  >
+                    YouTube
+                  </a>
 
-		</h1>
-                <p className="text-gray-600">GL pour votre titan la team -- LE BLEU EST BUG FAITE GAFFE IG  // SCEAU DEPEND LDV PEUT VARIER -- Écrivez le premier tour ou Gargandya va f1 (dernier perso qui tue t7 --> écrivez t8</p>
+              </h1>
+              <p className="text-gray-600">
+                GL pour votre titan la team
+                <br></br>
+                LE BLEU EST BUG FAITE GAFFE IG  // SCEAU DEPEND LDV PEUT VARIER
+              </p>
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -229,6 +244,23 @@
                       <Download className="w-4 h-4" />
                       Export CSV
                     </button>
+                    <button
+                      onClick={() => {
+                        setDarkMode(!darkMode);
+                        if(darkMode) {
+                          document.documentElement.style.filter = 'invert(0)';
+                        } else {
+                          document.documentElement.style.filter = 'invert(1)';
+                        }
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        darkMode
+                          ? 'bg-yellow-200 text-yellow-900 hover:bg-yellow-300' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                    <DarkModeIcon className="w-4 h-4" />{ darkMode? 'Disable Dark Mode' : 'Enable Dark Mode' }
+                    </button>
                   </div>
                   
                   <div className="flex items-center gap-2">
@@ -237,7 +269,7 @@
                       onClick={() => setSelectedSide('Gauche')}
                       className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                         selectedSide === 'Gauche' 
-                          ? 'bg-yellow-200 text-yellow-900' 
+                          ?  (darkMode ? "bg-blue-200 text-blue-900" : "bg-yellow-200 text-yellow-900")
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
@@ -247,7 +279,7 @@
                       onClick={() => setSelectedSide('Droite')}
                       className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                         selectedSide === 'Droite' 
-                          ? 'bg-yellow-200 text-yellow-900' 
+                          ? (darkMode ? "bg-blue-200 text-blue-900" : "bg-yellow-200 text-yellow-900")
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
@@ -259,6 +291,7 @@
                 {showSettings && (
           <div className="mt-4 p-4 bg-white rounded-lg border">
             <h3 className="font-semibold mb-3">Phase Transition Settings</h3>
+            <p>Write the first turn where Gargandyas pass turn. (Last player kills t7 --> write t8)</p><br/>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Phase 2 Settings */}
               <div className="space-y-3">
@@ -274,7 +307,7 @@
                     value={phaseTransitions.phase2}
                     onChange={(e) => setPhaseTransitions(prev => ({ 
                       ...prev, 
-                      phase2: parseInt(e.target.value) || 30 
+                      phase2: e.target.value >= 2 ? parseInt(e.target.value) : null
                     }))}
                     className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -307,7 +340,7 @@
                     value={phaseTransitions.phase3}
                     onChange={(e) => setPhaseTransitions(prev => ({ 
                       ...prev, 
-                      phase3: parseInt(e.target.value) || 60 
+                      phase3: e.target.value >= 2 ? parseInt(e.target.value) : null
                     }))}
                     className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -387,19 +420,19 @@
                 <h3 className="font-semibold text-blue-900 mb-2">Legend</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-blue-200 rounded"></div>
+                    <div className={`w-4 h-4 rounded ${darkMode ? "bg-yellow-200" : "bg-blue-200" }`}></div>
                     <span>Bleu (Highlighted)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-purple-200 rounded"></div>
+                    <div className={`w-4 h-4 rounded ${darkMode ? "bg-green-200" : "bg-purple-200" }`}></div>
                     <span>Attirance (Highlighted)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-green-200 rounded"></div>
+                    <div className={`w-4 h-4 rounded ${darkMode ? "bg-purple-200" : "bg-green-200"}`}></div>
                     <span>Poussée (Highlighted)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-yellow-200 rounded"></div>
+                    <div className={`w-4 h-4 rounded ${darkMode ? "bg-blue-200" : "bg-yellow-200"}`}></div>
                     <span>Selected Rafale Side</span>
                   </div>
                 </div>
