@@ -68,8 +68,9 @@
           const [selectedSide, setSelectedSide] = useState('Gauche');
           const [showSettings, setShowSettings] = useState(false);
           const [showLDV, setShowLDV] = useState(false);
-          const [darkMode, setDarkMode] = useState(false);
+          const [darkMode, setDarkMode] = useState(true);
           const [spellData, setSpellData] = useState([]);
+          {darkMode ? document.documentElement.style.filter = 'invert(96%)' : document.documentElement.style.filter = 'invert(0)'}
 
           const calculateSpells = () => {
             const turns = [];
