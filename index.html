@@ -23,6 +23,11 @@
             display: flex;
             justify-content: space-between;
         }
+
+        .main-title-container {
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -70,6 +75,106 @@
           const [showLDV, setShowLDV] = useState(false);
           const [darkMode, setDarkMode] = useState(true);
           const [spellData, setSpellData] = useState([]);
+
+          const [language, setLanguage] = useState('fr'); // 'en' or 'fr'
+
+          const getTrad = (key) => {
+            return lang[language][key] || '[NOLOC]' + key;
+          }
+          
+          const lang = {
+            'en' : {
+              title: "Gargandyas Spell Tracker",
+              description: "Tool to track spell casts and cooldowns for Gargandyas.",
+              settings: "Settings",
+              showSettings: "Show Settings",
+              hideSettings: "Hide Settings",
+              exportCSV: "Export CSV",
+              enableDarkMode: "Enable Dark Mode",
+              disableDarkMode: "Disable Dark Mode",
+              showLDV: "Show LIS Image",
+              hideLDV: "Hide LIS Image",
+              showPhaseSettings: "Show phase settings",
+              highlightSide: "Highlight Side:",
+              left: "Left",
+              right: "Right",
+              phase2Settings: "Phase 2 Settings",
+              phase2Starts: "Phase 2 starts on turn:",
+              oneTurnBlackout: "1 turn blackout only",
+              phase3Settings: "Phase 3 Settings",
+              phase3Starts: "Phase 3 starts on turn:",
+              legend: "Legend",
+              turn: "Turn",
+              phase: "Phase",
+              spells: "Spells",
+              Bleu: "Blue",
+              Poussée: "Push",
+              Attirance: "Pull",
+              Rafale: "Side Sweep",
+              'Rafale Right': "Right Side Sweep",
+              'Rafale Left': "Left Side Sweep",
+              'Rafale Droite': "Right Side Sweep",
+              'Rafale Gauche': "Left Side Sweep",
+              Patoune : "Paw Zone",
+              'Patoune Right': "Right Paw Zone",
+              'Patoune Left': "Left Paw Zone",
+              'Patoune Droite': "Right Paw Zone",
+              'Patoune Gauche': "Left Paw Zone",
+              'Patoune All': "Both Side Paw",
+              BLACKOUT: "BLACKOUT",
+              Laser: "Laser",
+              Sceau: "Seal",
+              "—" : "—",
+
+              "L'AFFICHAGE GLYPHE BLEU EST BUG FAITE GAFFE EN JEU": "BLUE GLYPH DISPLAY IS BUGGED BE CAREFUL IN GAME",
+              "SCEAU DEPEND DE LA LDV PEUT VARIER": "SEAL DEPENDS OF LINE OF SIGHT CAN CHANGE",
+              "Write the first turn where Gargandyas pass turn. (Last player kills T7 → write 8)":"Write the first turn where Gargandyas pass turn. (Last player kills T7 → write 8)",
+            },
+            'fr' : {
+              title: "Gargandyas Spell Tracker",
+              description: "Outil pour suivre les sorts de Gargandyas.",
+              settings: "Paramètres",
+              showSettings: "Afficher les paramètres",
+              hideSettings: "Masquer les paramètres",
+              exportCSV: "Exporter CSV",
+              enableDarkMode: "Activer le dark mode",
+              disableDarkMode: "Désactiver le dark mode",
+              showLDV: "Afficher l'image LDV",
+              hideLDV: "Masquer l'image LDV",
+              showPhaseSettings: "Afficher les paramètres de phase",
+              highlightSide: "Côté en surbrillance :",
+              left: "Gauche",
+              right: "Droite",
+              phase2Settings: "Paramètres de la phase 2",
+              phase2Starts: "La phase 2 commence au tour :",
+              oneTurnBlackout: "1 tour de blackout seulement",
+              phase3Settings: "Paramètres de la phase 3",
+              phase3Starts: "La phase 3 commence au tour :",
+              legend: "Légende",
+              turn: "Tour",
+              phase: "Phase",
+              spells: "Sorts",
+              Bleu: "Bleu",
+              Poussée: "Poussée",
+              Attirance: "Attirance",
+              Rafale: "Rafale",
+              'Rafale Droite': "Rafale Droite",
+              'Rafale Gauche': "Rafale Gauche",
+              Patoune : "Patoune",
+              'Patoune Droite': "Patoune Droite",
+              'Patoune Gauche': "Patoune Gauche",
+              'Patoune All': "Patoune All",
+              BLACKOUT: "BLACKOUT",
+              Laser: "Laser",
+              Sceau: "Sceau",
+              "—" : "—",
+
+              "L'AFFICHAGE GLYPHE BLEU EST BUG FAITE GAFFE EN JEU": "L'AFFICHAGE GLYPHE BLEU EST BUG FAITE GAFFE EN JEU",
+              "SCEAU DEPEND DE LA LDV PEUT VARIER": "SCEAU DEPEND DE LA LDV PEUT VARIER",
+              "Write the first turn where Gargandyas pass turn. (Last player kills T7 → write 8)": "Écrivez le premier tour où Gargandyas passe le tour. (Le dernier joueur tue T7 → écrire 8)",
+            }
+          };
+
           {darkMode ? document.documentElement.style.filter = 'invert(96%)' : document.documentElement.style.filter = 'invert(0)'}
 
           const calculateSpells = () => {
@@ -82,8 +187,8 @@
             let rafaleNextAvailable = 2;
             let laserNextAvailable = 2;
             let patouneNextAvailable = 2;
-            let rafaleAlternate = 'Gauche';
-            let patouneAlternate = 'Droite';
+            let rafaleAlternate = 'left';
+            let patouneAlternate = 'right';
             let blackoutTurns = [];
             
             // Calculate blackout turns
@@ -144,8 +249,8 @@
               
               // Rafale spell
               if (turn >= rafaleNextAvailable) {
-                spells.push(`Rafale ${rafaleAlternate}`);
-                rafaleAlternate = rafaleAlternate === 'Gauche' ? 'Droite' : 'Gauche';
+                spells.push(`Rafale ${getTrad(rafaleAlternate)}`);
+                rafaleAlternate = rafaleAlternate === 'left' ? 'right' : 'left';
                 rafaleNextAvailable = turn + 2;
               }
               
@@ -155,8 +260,8 @@
                 if (currentPhase === 'P2') {
                   spells.push('Patoune All');
                 } else {
-                  spells.push(`Patoune ${patouneAlternate}`);
-                  patouneAlternate = patouneAlternate === 'Droite' ? 'Gauche' : 'Droite';
+                  spells.push(`Patoune ${getTrad(patouneAlternate)}`);
+                  patouneAlternate = patouneAlternate === 'right' ? 'left' : 'right';
                 }
                 patouneNextAvailable = turn + 2;
               }
@@ -225,24 +330,46 @@
           return (
             <div className="max-w-7xl mx-auto p-6 bg-white min-h-screen">
               <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Gargandyas Spell Tracker
-
-              </h1>
-              <p className="text-gray-600">
-                Original website by Shanol :
-                <a 
-                  href="https://youtu.be/G0xzrw4jTUQ" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={`${darkMode ? "text-cyan-400 hover:text-cyan-500" : "text-red-600 hover:text-red-700"} underline decoration-2 underline-offset-2 transition duration-200 ml-2`}
-                >
-                  YouTube
-                </a>
-                <br></br>
-                L'AFFICHAGE GLYPHE BLEU EST BUG FAITE GAFFE EN JEU
-                <br></br>
-                SCEAU DEPEND DE LA LDV PEUT VARIER
-              </p>
+                <div className="main-title-container">
+                  <h1 className="text-3xl font-bold text-gray-800 mb-2">Gargandyas Spell Tracker</h1>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setLanguage('en')}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        language === 'en' 
+                          ?  (darkMode ? "bg-orange-200 text-orange-900" : "bg-blue-200 text-blue-900")
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      <span style={darkMode ? {filter:'invert(1)'} : {}}>🇬🇧</span> EN
+                    </button>
+                    <button
+                      onClick={() => setLanguage('fr')}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        language === 'fr' 
+                          ? (darkMode ? "bg-orange-200 text-orange-900" : "bg-blue-200 text-blue-900")
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                    <span style={darkMode ? {filter:'invert(1)'} : {}}>🇫🇷</span> FR
+                    </button>
+                  </div>
+                </div>
+                <p className="text-gray-600">
+                  Original website by Shanol :
+                  <a 
+                    href="https://youtu.be/G0xzrw4jTUQ" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`${darkMode ? "text-cyan-400 hover:text-cyan-500" : "text-red-600 hover:text-red-700"} underline decoration-2 underline-offset-2 transition duration-200 ml-2`}
+                  >
+                    YouTube
+                  </a>
+                  <br></br>
+                  <span>{getTrad("L'AFFICHAGE GLYPHE BLEU EST BUG FAITE GAFFE EN JEU")}</span>
+                  <br></br>
+                  <span>{getTrad("SCEAU DEPEND DE LA LDV PEUT VARIER")}</span>
+                </p>
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -253,14 +380,14 @@
                       className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
                     >
                       <Settings className="w-4 h-4" />
-                      {showSettings ? 'Hide Settings' : 'Show Settings'}
+                      {showSettings ? getTrad('hideSettings') : getTrad('showSettings')}
                     </button>
                     <button
                       onClick={exportData}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                     >
                       <Download className="w-4 h-4" />
-                      Export CSV
+                      {getTrad('exportCSV')}
                     </button>
                     <button
                       onClick={() => {
@@ -277,12 +404,12 @@
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                    <DarkModeIcon className="w-4 h-4" />{ darkMode? 'Disable Dark Mode' : 'Enable Dark Mode' }
+                    <DarkModeIcon className="w-4 h-4" />{ darkMode? getTrad('disableDarkMode') : getTrad('enableDarkMode') }
                     </button>
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">Highlight Side:</span>
+                    <span className="text-sm font-medium text-gray-700">{getTrad("highlightSide")}</span>
                     <button
                       onClick={() => setSelectedSide('Gauche')}
                       className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
@@ -291,7 +418,7 @@
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      Gauche
+                      {getTrad('left')}
                     </button>
                     <button
                       onClick={() => setSelectedSide('Droite')}
@@ -301,7 +428,7 @@
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      Droite
+                    {getTrad('right')}
                     </button>
                   </div>
                 </div>
@@ -310,8 +437,8 @@
           <div className="mt-4 p-4 bg-white rounded-lg border">
             <div className="settings-title-container">
               <div>
-                <h3 className="font-semibold mb-3">Settings</h3>
-                <p>Write the first turn where Gargandyas pass turn. (Last player kills T7 --> write 8)</p><br/>
+                <h3 className="font-semibold mb-3">{getTrad('settings')}</h3>
+                <p>{getTrad('Write the first turn where Gargandyas pass turn. (Last player kills T7 → write 8)')}</p><br/>
               </div>
               <button
                 onClick={() => setShowLDV(!showLDV)}
@@ -319,7 +446,7 @@
                 style={{height: 'fit-content'}}
                 >
                 {showLDV ? <Settings className="w-4 h-4" /> : <LDVIcon className="w-4 h-4" />}
-                {showLDV ? 'Show Phase Settings' : 'Show LDV Image'}
+                {showLDV ? getTrad('showPhaseSettings') : getTrad('showLDV')}
               </button>
             </div>
             {!(showLDV) && (
@@ -329,7 +456,7 @@
                 <h4 className="font-medium text-gray-800">Phase 2</h4>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phase 2 starts on turn:
+                      {getTrad('phase2Starts')}
                     </label>
                     <input
                       type="number"
@@ -352,7 +479,7 @@
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="phase2-one-turn" className="text-sm text-gray-700">
-                    1 turn blackout only
+                    {getTrad('oneTurnBlackout')}
                   </label>
                 </div>
               </div>
@@ -362,7 +489,7 @@
                 <h4 className="font-medium text-gray-800">Phase 3</h4>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phase 3 starts on turn:
+                    {getTrad('phase3Starts')}
                   </label>
                   <input
                     type="number"
@@ -385,7 +512,7 @@
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="phase3-one-turn" className="text-sm text-gray-700">
-                    1 turn blackout only
+                    {getTrad('oneTurnBlackout')}
                   </label>
                 </div>
               </div>
@@ -411,13 +538,13 @@
                     <thead className="bg-gray-50 border-b">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Turn
+                          {getTrad('turn')}
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Phase
+                          {getTrad('phase')}
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Spells Cast
+                          {getTrad('spells')}
                         </th>
                       </tr>
                     </thead>
@@ -445,7 +572,7 @@
                                     getSpellHighlight(spell) || 'bg-gray-100 text-gray-700'
                                   }`}
                                 >
-                                  {spell}
+                                  {getTrad(spell)}
                                 </span>
                               ))}
                             </div>
@@ -462,19 +589,19 @@
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded ${darkMode ? "bg-yellow-200" : "bg-blue-200" }`}></div>
-                    <span>Bleu</span>
+                    <span>{getTrad('Bleu')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded ${darkMode ? "bg-green-200" : "bg-purple-200" }`}></div>
-                    <span>Attirance</span>
+                    <span>{getTrad('Attirance')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded ${darkMode ? "bg-purple-200" : "bg-green-200"}`}></div>
-                    <span>Poussée</span>
+                    <span>{getTrad('Poussée')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className={`w-4 h-4 rounded ${darkMode ? "bg-blue-200" : "bg-yellow-200"}`}></div>
-                    <span>Rafale</span>
+                    <span>{getTrad('Rafale')}</span>
                   </div>
                 </div>
               </div>
